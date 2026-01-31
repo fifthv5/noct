@@ -53,7 +53,6 @@ TEST_CASE("method reads and writes this") {
 				return this.x;
 			}
 		}
-
 		var x = Flyer();
 		x.fly();
 	)") == 2.0);
@@ -65,11 +64,25 @@ TEST_CASE("method mutation persists on instance") {
 			fn setX(v) { this.x = v; }
 			fn getX() { return this.x; }
 		}
-
 		var x = Flyer();
 		x.setX(42);
 		x.getX();
 	)") == 42.0);
+}
+
+TEST_CASE("method can call another method") {
+	CHECK(RunAndGet<double>(R"(
+		class A {
+			fn inc() { this.x = this.x + 1; }
+			fn run() {
+				this.x = 0;
+				this.inc();
+				this.inc();
+				return this.x;
+			}
+		}
+		A().run();
+	)") == 2.0);
 }
 
 TEST_CASE("this works inside nested function in method") {
@@ -80,146 +93,10 @@ TEST_CASE("this works inside nested function in method") {
 				f();
 			}
 		}
-
 		var x = Flyer();
 		x.test();
 		x.x;
 	)") == 7.0);
-}
-
-TEST_CASE("retrieving bound method keeps correct this") {
-	CHECK(RunAndGet<double>(R"(
-		class A {
-			fn set(v) { this.x = v; }
-		}
-
-		var a = A();
-		var s = a.set;
-		s(123);
-		a.x;
-	)") == 123.0);
-}
-
-TEST_CASE("method can capture outer variables") {
-	CHECK(RunAndGet<double>(R"(
-		var y = 10;
-
-		class A {
-			fn f() { return y; }
-		}
-
-		var a = A();
-		a.f();
-	)") == 10.0);
-}
-
-TEST_CASE("this outside class is error") {
-	Noct::Context ctx {};
-	ctx.LoggingEnabled = false;
-
-	auto r = RunFromString(ctx, R"(
-		this;
-	)");
-
-	CHECK((r.HadSemanticError || r.HadRuntimeError));
-}
-
-TEST_CASE("property access on non instance fails") {
-	Noct::Context ctx {};
-	ctx.LoggingEnabled = false;
-
-	auto r = RunFromString(ctx, R"(
-		var x = 5;
-		x.y;
-	)");
-
-	CHECK(r.HadRuntimeError);
-}
-
-TEST_CASE("setting field on non instance fails") {
-	Noct::Context ctx {};
-	ctx.LoggingEnabled = false;
-
-	auto r = RunFromString(ctx, R"(
-		var x = "hi";
-		x.y = 3;
-	)");
-
-	CHECK(r.HadRuntimeError);
-}
-
-TEST_CASE("calling method on class instead of instance fails") {
-	Noct::Context ctx {};
-	ctx.LoggingEnabled = false;
-
-	auto r = RunFromString(ctx, R"(
-		class A { fn f() {} }
-		A.f();
-	)");
-
-	CHECK(r.HadRuntimeError);
-}
-
-TEST_CASE("bound method stays bound to original instance") {
-	CHECK(RunAndGet<double>(R"(
-		class A { fn set(v) { this.x = v; } }
-
-		var a = A();
-		var b = A();
-
-		var f = a.set;
-		f(10);
-
-		b.set(20);
-
-		a.x + b.x;
-	)") == 30.0);
-}
-
-TEST_CASE("methods on different instances keep separate this") {
-	CHECK(RunAndGet<double>(R"(
-		class A { fn set(v) { this.x = v; } }
-
-		var a = A();
-		var b = A();
-
-		a.set(1);
-		b.set(2);
-
-		a.x * 10 + b.x;
-	)") == 12.0);
-}
-
-TEST_CASE("init method runs as constructor") {
-	CHECK(RunAndGet<double>(R"(
-		class A {
-			fn init(v) { this.x = v; }
-		}
-
-		var a = A(55);
-		a.x;
-	)") == 55.0);
-}
-
-TEST_CASE("constructor arity enforced") {
-	Noct::Context ctx {};
-	ctx.LoggingEnabled = false;
-
-	auto r = RunFromString(ctx, R"(
-		class A { fn init(x) {} }
-		A();
-	)");
-
-	CHECK(r.HadRuntimeError);
-}
-
-TEST_CASE("method can return this") {
-	CHECK(RunAndGet<std::shared_ptr<Noct::ClassInstance>>(R"(
-		class A {
-			fn me() { return this; }
-		}
-		A().me();
-	)") != nullptr);
 }
 
 TEST_CASE("deep nested closures share correct this") {
@@ -233,21 +110,153 @@ TEST_CASE("deep nested closures share correct this") {
 				g();
 			}
 		}
-
 		var a = A();
 		a.f();
 		a.x;
 	)") == 9.0);
 }
 
+TEST_CASE("method can capture outer variables") {
+	CHECK(RunAndGet<double>(R"(
+		var y = 10;
+		class A { fn f() { return y; } }
+		var a = A();
+		a.f();
+	)") == 10.0);
+}
+
+TEST_CASE("retrieving bound method keeps correct this") {
+	CHECK(RunAndGet<double>(R"(
+		class A { fn set(v) { this.x = v; } }
+		var a = A();
+		var s = a.set;
+		s(123);
+		a.x;
+	)") == 123.0);
+}
+
+TEST_CASE("bound method stays bound to original instance") {
+	CHECK(RunAndGet<double>(R"(
+		class A { fn set(v) { this.x = v; } }
+		var a = A();
+		var b = A();
+		var f = a.set;
+		f(10);
+		b.set(20);
+		a.x + b.x;
+	)") == 30.0);
+}
+
+TEST_CASE("methods on different instances keep separate this") {
+	CHECK(RunAndGet<double>(R"(
+		class A { fn set(v) { this.x = v; } }
+		var a = A();
+		var b = A();
+		a.set(1);
+		b.set(2);
+		a.x * 10 + b.x;
+	)") == 12.0);
+}
+
+TEST_CASE("init method runs as constructor") {
+	CHECK(RunAndGet<double>(R"(
+		class A { fn init(v) { this.x = v; } }
+		var a = A(55);
+		a.x;
+	)") == 55.0);
+}
+
+TEST_CASE("constructor arity enforced") {
+	Noct::Context ctx {};
+	ctx.LoggingEnabled = false;
+	auto r = RunFromString(ctx, R"(
+		class A { fn init(x) {} }
+		A();
+	)");
+	CHECK(r.HadRuntimeError);
+}
+
+TEST_CASE("method can return this") {
+	CHECK(RunAndGet<std::shared_ptr<Noct::ClassInstance>>(R"(
+		class A { fn me() { return this; } }
+		A().me();
+	)") != nullptr);
+}
+
+TEST_CASE("this outside class is error") {
+	Noct::Context ctx {};
+	ctx.LoggingEnabled = false;
+	auto r = RunFromString(ctx, R"(
+		this;
+	)");
+	CHECK((r.HadSemanticError || r.HadRuntimeError));
+}
+
+TEST_CASE("property access on non instance fails") {
+	Noct::Context ctx {};
+	ctx.LoggingEnabled = false;
+	auto r = RunFromString(ctx, R"(
+		var x = 5;
+		x.y;
+	)");
+	CHECK(r.HadRuntimeError);
+}
+
+TEST_CASE("setting field on non instance fails") {
+	Noct::Context ctx {};
+	ctx.LoggingEnabled = false;
+	auto r = RunFromString(ctx, R"(
+		var x = "hi";
+		x.y = 3;
+	)");
+	CHECK(r.HadRuntimeError);
+}
+
+TEST_CASE("calling method on class instead of instance fails") {
+	Noct::Context ctx {};
+	ctx.LoggingEnabled = false;
+	auto r = RunFromString(ctx, R"(
+		class A { fn f() {} }
+		A.f();
+	)");
+	CHECK(r.HadRuntimeError);
+}
+
 TEST_CASE("calling missing method fails") {
 	Noct::Context ctx {};
 	ctx.LoggingEnabled = false;
-
 	auto r = RunFromString(ctx, R"(
 		class A {}
 		A().nope();
 	)");
-
 	CHECK(r.HadRuntimeError);
+}
+
+TEST_CASE("self reference does not crash") {
+	CHECK(RunAndGet<std::shared_ptr<Noct::ClassInstance>>(R"(
+		class A { fn init() { this.me = this; } }
+		A();
+	)") != nullptr);
+}
+
+TEST_CASE("two instance cycle is safe") {
+	CHECK(RunAndGet<double>(R"(
+		class N { fn init(v) { this.v = v; this.next = nil; } }
+		var a = N(1);
+		var b = N(2);
+		a.next = b;
+		b.next = a;
+		a.next.v;
+	)") == 2.0);
+}
+
+TEST_CASE("large allocation loop remains stable") {
+	CHECK(RunAndGet<double>(R"(
+		class A { fn init(v) { this.v = v; } }
+		var last = nil;
+		for (var i = 0; i < 200; i = i + 1) {
+			last = A(i);
+		}
+		last.v;
+	)") == 199.0);
 }

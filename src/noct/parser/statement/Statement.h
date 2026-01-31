@@ -22,6 +22,12 @@ public:
 	    VariableDecleration, FunctionDecleration, ClassDecleration,
 	    PrintStatement, WhileStatement, BreakStatement, ReturnStatement>;
 
+	Statement(const Statement&) = delete;
+	Statement& operator=(const Statement&) = delete;
+
+	Statement(Statement&&) noexcept = default;
+	Statement& operator=(Statement&&) noexcept = default;
+
 public:
 	Variant Instruction;
 

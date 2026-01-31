@@ -13,6 +13,8 @@ class List {
 	}
 
 	fn push(val) {
+		print this.top;
+
 		this.size = this.size + 1;
 		var newTop = Node(val);
 

@@ -141,17 +141,13 @@ void Interpreter::operator()(const Literal& literal) {
 	m_Value = literal.Value;
 }
 
-void Interpreter::operator()(const This& expr) {
-	m_Value = m_Env->Get(expr.Slot, expr.Depth);
-}
-
 void Interpreter::operator()(const Grouping& group) {
 	Evaluate(*group.GroupExpr);
 }
 
 void Interpreter::operator()(const Get& get) {
 	Evaluate(*get.Instance);
-	auto instancePtr { std::get_if<ClassInstanceRef>(&m_Value) };
+	ClassInstanceRef* instancePtr { std::get_if<ClassInstanceRef>(&m_Value) };
 
 	if (!instancePtr) {
 		throw RuntimeError(get.Name, "Only instances can have properties.");
@@ -162,6 +158,7 @@ void Interpreter::operator()(const Get& get) {
 
 void Interpreter::operator()(const Set& set) {
 	Evaluate(*set.Instance);
+
 	auto instance = std::get_if<ClassInstanceRef>(&m_Value);
 	if (!instance) {
 		throw RuntimeError(set.Name, "Only instances can have properties.");
@@ -340,12 +337,24 @@ void Interpreter::operator()(const Ternary& ternary) {
 }
 
 void Interpreter::operator()(const Variable& var) {
+	if (var.Slot == UNRESOLVED || var.Depth == UNRESOLVED)
+		throw RuntimeError(var.Name, "Internal error: unresolved variable access.");
 	m_Value = m_Env->Get(var.Slot, var.Depth);
 }
 
-void Interpreter::operator()(const Assign& exp) {
-	Evaluate(*exp.Value);
-	m_Env->Assign(exp.Slot, exp.Depth, m_Value);
+void Interpreter::operator()(const This& expr) {
+	if (expr.Slot == UNRESOLVED || expr.Depth == UNRESOLVED)
+		throw RuntimeError(expr.Keyword, "Internal error: unresolved 'this'.");
+
+	m_Value = m_Env->Get(expr.Slot, expr.Depth);
+}
+
+void Interpreter::operator()(const Assign& expr) {
+	if (expr.Slot == UNRESOLVED || expr.Depth == UNRESOLVED)
+		throw RuntimeError(expr.Name, "Internal error: unresolved assignment.");
+
+	Evaluate(*expr.Value);
+	m_Env->Assign(expr.Slot, expr.Depth, m_Value);
 }
 
 void Interpreter::operator()(const Logical& exp) {

@@ -164,8 +164,8 @@ void Resolver::operator()(Get& get) {
 }
 
 void Resolver::operator()(Set& get) {
-	Resolve(*get.Value);
 	Resolve(*get.Instance);
+	Resolve(*get.Value);
 }
 
 void Resolver::operator()(Variable& v) {
@@ -173,7 +173,8 @@ void Resolver::operator()(Variable& v) {
 }
 
 void Resolver::operator()(Assign& a) {
-	TryResolveVariableUse(a.Name, a.Slot, a.Depth, false);
+	if (!TryResolveVariableUse(a.Name, a.Slot, a.Depth, false))
+		return;
 	Resolve(*a.Value);
 }
 
@@ -344,6 +345,7 @@ void Resolver::ResolveCallableBody(
 
 	outClosureSize = 0;
 	std::optional<ScopeGuard> closure;
+
 	if (injectThis) {
 		closure.emplace(*this);
 		auto& closureScope = GetCurrentScope();
@@ -358,6 +360,7 @@ void Resolver::ResolveCallableBody(
 	}
 
 	ScopeGuard call(*this);
+
 	auto& callScope = GetCurrentScope();
 
 	for (const auto& param : params) {

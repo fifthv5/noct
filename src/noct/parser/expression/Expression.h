@@ -42,6 +42,12 @@ struct Expression {
 	template <class T>
 	explicit Expression(T&& v)
 	    : Value(std::forward<T>(v)) { }
+
+	Expression(const Expression&) = delete;
+	Expression& operator=(const Expression&) = delete;
+
+	Expression(Expression&&) noexcept = default;
+	Expression& operator=(Expression&&) noexcept = default;
 };
 
 }

@@ -539,7 +539,7 @@ ExpressionPtr Parser::Primary() {
 	}
 
 	if (MatchCurrent(TokenType::Nil)) {
-		return make_expression<Noct::Maybe>();
+		return make_expression<Literal>(std::monostate {});
 	}
 
 	if (MatchCurrent(TokenType::Number)) {
