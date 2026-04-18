@@ -69,10 +69,10 @@ void Lexer::ScanToken() {
 		AddToken(Match('=') ? TokenType::GreaterEqual : TokenType::Greater);
 		break;
 	case '-':
-		AddToken(Match('-') ? TokenType::MinusMinus : TokenType::Minus);
+		AddToken(Match('-') ? TokenType::MinusMinus : (Match('=') ? TokenType::MinusEqual : TokenType::Minus));
 		break;
 	case '+':
-		AddToken(Match('+') ? TokenType::PlusPlus : TokenType::Plus);
+		AddToken(Match('+') ? TokenType::PlusPlus : (Match('=') ? TokenType::PlusEqual : TokenType::Plus));
 		break;
 #pragma endregion
 #pragma region Other Token Types

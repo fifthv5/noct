@@ -20,7 +20,7 @@ add_executable(Noct src/Main.cpp)
 target_link_libraries(Noct PRIVATE NoctLib)
 
 # ---------- tests ----------
-add_executable(NoctTests 
+add_executable(NoctTests
 	tests/SyntaxErrors.cpp
 	tests/SemanticErrors.cpp
 	tests/RuntimeErrors.cpp

@@ -13,8 +13,6 @@ class List {
 	}
 
 	fn push(val) {
-		print this.top;
-
 		this.size = this.size + 1;
 		var newTop = Node(val);
 
@@ -49,11 +47,9 @@ class List {
 
 var list = List();
 
-list.push(2);
-list.push(1);
-list.push(8);
-list.push(10);
-
+list.push(67);
+list.push(68);
+list.push(69);
 
 list.print_list();
 

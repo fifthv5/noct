@@ -55,7 +55,7 @@ private:
 
 	void Synchronize();
 
-	std::vector<ExpressionPtr> GetArguments();
+	std::vector<ExpressionPtr> GetCommaSeperatedExpressions();
 	std::vector<Token> GetParameters();
 
 	bool MatchAny(const std::initializer_list<TokenType>& types);

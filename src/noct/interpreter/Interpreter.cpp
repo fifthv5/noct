@@ -18,6 +18,7 @@
 
 #include "noct/parser/expression/ClassCallable.h"
 #include "noct/parser/expression/Expression.h"
+#include "noct/parser/expression/ExpressionFwd.h"
 #include "noct/parser/expression/FunctionValue.h"
 #include "noct/parser/expression/ICallable.h"
 #include "noct/parser/expression/LiteralBoolifier.h"
@@ -76,7 +77,6 @@ void Interpreter::operator()(const ClassDecleration& classDecl) {
 	ClassValueRef classValueRef { std::make_shared<ClassValue>(classDecl.Name.Lexeme) };
 
 	for (const auto& method : classDecl.Methods) {
-
 		auto fnValueFactory { FunctionValueFactory { m_Env } };
 		FunctionValueRef value = fnValueFactory(method);
 		classValueRef->Methods.emplace(method.Name.Lexeme, std::move(value));
@@ -191,7 +191,6 @@ void Interpreter::operator()(const Unary& unary) {
 	}
 	case TokenType::MinusMinus: {
 		try {
-
 			EnsureNumbers(unary.Operator, rightDoublePtr);
 			Expression& expr { *unary.Right };
 			auto var { std::get<Variable>(expr.Value) };
@@ -391,9 +390,8 @@ void Interpreter::operator()(const Call& exp) {
 	}
 
 	if (args.size() != callee->Arity()) {
-		throw RuntimeError(exp.Paren,
-		    fmt::format("{} expects {} arguments but received {}",
-		        callee->Name(), callee->Arity(), args.size()));
+		auto errorStr { fmt::format("{} expects {} arguments but received {}", callee->Name(), callee->Arity(), args.size()) };
+		throw RuntimeError(exp.Paren, errorStr);
 	}
 
 	CallContext ctx { *this, exp.Paren };

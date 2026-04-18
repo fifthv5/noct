@@ -6,6 +6,7 @@ class Node {
 	}
 }
 
+
 class List {
 	fn init() {
 		this.top = nil;
@@ -53,7 +54,6 @@ list.push(2);
 list.push(1);
 list.push(8);
 list.push(10);
-
 
 list.print_list();
 

@@ -7,13 +7,11 @@
 namespace Noct {
 class Module {
 public:
-	Module(std::string_view name, bool automaticImport);
+	Module(std::string_view name);
 	void AddSymbol(const EnvironmentVariable& var);
 
 private:
 	std::string m_Name;
-	bool m_AutoImport;
-	std::shared_ptr<Environment> m_GlobalEnv;
 	size_t m_SlotCount;
 };
 

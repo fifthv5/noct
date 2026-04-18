@@ -18,6 +18,7 @@ void Environment::Assign(size_t slot, size_t depth, const NoctObject& val) {
 	if (depth > 0) {
 		if (!m_Papa)
 			throw RuntimeError("invalid scope chain");
+
 		m_Papa->Assign(slot, depth - 1, val);
 		return;
 	}

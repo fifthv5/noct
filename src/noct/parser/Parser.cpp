@@ -15,6 +15,7 @@
 #include "noct/lexer/TokenType.h"
 
 #include "noct/parser/expression/Expression.h"
+#include "noct/parser/expression/ExpressionFwd.h"
 #include "noct/parser/expression/LiteralNummifier.h"
 #include "noct/parser/expression/MakeExpression.h"
 
@@ -38,6 +39,8 @@ const std::set<TokenType> Parser::s_BinaryTokenTypes {
 	TokenType::Less,
 	TokenType::LessEqual,
 	TokenType::Plus,
+	TokenType::PlusEqual,
+	TokenType::MinusEqual,
 	TokenType::Star,
 	TokenType::Slash,
 };
@@ -321,11 +324,12 @@ ExpressionPtr Parser::Expr() {
 }
 
 ExpressionPtr Parser::Assignment() {
-	std::unique_ptr expr { Or() };
+	ExpressionPtr expr { Or() };
 
-	if (MatchCurrent(TokenType::Equal)) {
+	// TODO: implement plus equal and minus equal
+	if (MatchAny({ TokenType::Equal, TokenType::PlusEqual, TokenType::MinusEqual })) {
 		Token equalOperator { GetPrevious() };
-		std::unique_ptr value { Assignment() };
+		ExpressionPtr value { Assignment() };
 
 		if (auto var { std::get_if<Variable>(&expr->Value) }) {
 			return make_expression<Assign>(var->Name, std::move(value));
@@ -446,7 +450,7 @@ ExpressionPtr Parser::Call() {
 	while (true) {
 		if (MatchCurrent(LeftParen)) {
 			auto paren { GetPrevious() };
-			auto args = GetArguments();
+			auto args = GetCommaSeperatedExpressions();
 			Consume(RightParen, "Expected ')' after arguments.");
 			expr = make_expression<Noct::Call>(std::move(expr), std::move(args), paren);
 		} else if (MatchCurrent(Dot)) {
@@ -471,7 +475,7 @@ ExpressionPtr Parser::IncDec() {
 	return target;
 }
 
-std::vector<ExpressionPtr> Parser::GetArguments() {
+std::vector<ExpressionPtr> Parser::GetCommaSeperatedExpressions() {
 	using enum TokenType;
 	std::vector<ExpressionPtr> arguments {};
 
