@@ -54,8 +54,7 @@ list.print();
 
 ```sh
 # Build
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
+./generate.sh
 
 # Run a script
 ./run.sh path/to/script.noct
